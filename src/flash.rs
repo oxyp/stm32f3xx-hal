@@ -100,6 +100,8 @@ impl FlashExt for FLASH {
             asm::nop();
         }
 
+        defmt::info!("BSY bit status: {}", self.sr.read().bsy().bit_is_set());
+
         // 6. Check the EOP flag in the FLASH_SR register (it is set when the erase operation has succeeded),
         //    and then clear it by software.
         if self.sr.read().eop().bit_is_set() {
@@ -112,6 +114,10 @@ impl FlashExt for FLASH {
         }
 
         // The software should start checking if the BSY bit equals ‘0’ at least one CPU cycle after setting the STRT bit.
+        defmt::info!(
+            "BSY bit status after address write: {}",
+            self.sr.read().bsy().bit_is_set()
+        );
 
         // WE ARE ASSUMING that the above takes > cycle so we're not waiting explicitly (danger danger)
         if self.sr.read().bsy().bit_is_set() {
