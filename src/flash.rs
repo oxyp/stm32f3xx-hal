@@ -4,6 +4,7 @@
 
 use crate::pac::{flash, FLASH};
 use cortex_m::asm;
+
 /*
 SCHLACHTPLAN
 
@@ -22,12 +23,20 @@ EXTRA BONUS POINTS
 const FLASH_KEYR_KEY_1: u32 = 0x45670123;
 const FLASH_KEYR_KEY_2: u32 = 0xCDEF89AB;
 
+// TODO impl std::Error for this?
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub enum FlashError {
+    Busy,
+    EraseFailed,
+}
+
 /// Extension trait to constrain the FLASH peripheral
 pub trait FlashExt {
     /// Constrains the FLASH peripheral to play nicely with the other abstractions
     fn constrain(self) -> Parts;
     fn page_write(self) -> Result<(), ()>;
-    fn page_erase(self, address: u32) -> Result<(), ()>;
+    fn page_erase(self, address: u32) -> Result<(), FlashError>;
 }
 
 impl FlashExt for FLASH {
@@ -38,13 +47,12 @@ impl FlashExt for FLASH {
     }
 
     /// TODO write docs
-    fn page_erase(self, address: u32) -> Result<(), ()> {
+    fn page_erase(self, address: u32) -> Result<(), FlashError> {
         // 1. Check that no main Flash memory operation is ongoing by checking the BSY bit in
         //    the FLASH_SR register.
         if self.sr.read().bsy().bit_is_set() {
             // We are busy! Come back later
-            // TODO proper error tyoe
-            return Err(());
+            return Err(FlashError::Busy);
         }
 
         // TODO is the order correct here?
@@ -73,8 +81,7 @@ impl FlashExt for FLASH {
             self.sr.write(|w| w.eop().clear_bit())
         } else {
             // this should be set by now!
-            // TODO proper error type
-            return Err(());
+            return Err(FlashError::EraseFailed);
         }
 
         // The software should start checking if the BSY bit equals ‘0’ at least one CPU cycle after setting the STRT bit.
@@ -83,8 +90,7 @@ impl FlashExt for FLASH {
         if self.sr.read().bsy().bit_is_set() {
             Ok(())
         } else {
-            // TODO proper error type
-            Err(())
+            Err(FlashError::Busy)
         }
     }
 

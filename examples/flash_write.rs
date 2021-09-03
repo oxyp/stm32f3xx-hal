@@ -19,7 +19,8 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
     defmt::error!("erasing flash page at {}...", test_address);
-    dp.FLASH.page_erase(test_address).unwrap();
+    let erase_result = dp.FLASH.page_erase(test_address);
+    defmt::info!("erase result: {}", erase_result);
 
     // make sure function is diverging
     loop {
