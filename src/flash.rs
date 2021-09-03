@@ -47,7 +47,12 @@ impl FlashExt for FLASH {
         }
     }
 
-    /// TODO write docs
+    /// Erase Flash Page at `address`.
+    /// Note that one page = 2KByte
+    ///
+    /// ⚠️⚠️⚠️ CAUTION: ⚠️⚠️⚠️
+    /// This function does *not* perform any bounds checks.
+    /// If you erase program code, that is on you.
     fn page_erase(self, address: u32) -> Result<(), FlashError> {
         // 1. Check that no main Flash memory operation is ongoing by checking the BSY bit in
         //    the FLASH_SR register.
@@ -102,7 +107,12 @@ impl FlashExt for FLASH {
         }
     }
 
-    /// TODO write docs!
+    /// Write to Flash Page.
+    /// Note that one page = 2KByte
+    ///
+    /// ⚠️⚠️⚠️ CAUTION: ⚠️⚠️⚠️
+    /// This function does *not* perform any bounds checks.
+    /// If you erase program code, that is on you.
     // TODO finish implementation
     fn page_write(self) -> Result<(), ()> {
         // TODO: do we have to unlock write protection (see "Unlocking the Flash memory")?
