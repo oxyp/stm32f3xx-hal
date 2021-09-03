@@ -67,7 +67,7 @@ rtt-target = { version = "0.3.0", features = ["cortex-m"] }
 slice-group-by = "0.2.6"
 
 [features]
-default = ["rt", "ld", "usb", "can", "rtc", "enumset"]
+default = ["rt", "ld", "usb", "can", "rtc", "enumset", "defmt-default"]
 device-selected = []
 direct-call-deprecated = []
 ld = []
@@ -205,3 +205,7 @@ required-features = ["ld", "stm32f303xc"]
 [[example]]
 name = "gpio_interrupts"
 required-features = ["ld", "rt", "stm32f303xc"]
+
+[[example]]
+name = "flash_write"
+required-features = ["ld", "stm32f303xc"]

@@ -3,6 +3,7 @@
 
 use cortex_m::asm;
 use cortex_m_rt::entry;
+use defmt_rtt as _; // global logger
 use panic_semihosting as _;
 use stm32f3xx_hal::{pac, prelude::*};
 
@@ -17,6 +18,7 @@ fn main() -> ! {
     // Get peripherals, clocks and freeze them
     let dp = pac::Peripherals::take().unwrap();
 
+    defmt::error!("erasing flash page at {}...", test_address);
     dp.FLASH.page_erase(test_address).unwrap();
 
     // make sure function is diverging
