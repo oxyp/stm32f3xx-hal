@@ -29,6 +29,7 @@ const FLASH_KEYR_KEY_2: u32 = 0xCDEF89AB;
 pub enum FlashError {
     Busy,
     EraseFailed,
+    UnlockFailed,
 }
 
 /// Extension trait to constrain the FLASH peripheral
@@ -56,7 +57,14 @@ impl FlashExt for FLASH {
         }
 
         // TODO is the order correct here?
-        unlock_cr(&self);
+        if self.cr.read().lock().bit_is_set() {
+            defmt::info!("CR_LOCK was set, unlocking...");
+            unlock_cr(&self);
+
+            if self.cr.read().lock().bit_is_set() {
+                return Err(FlashError::UnlockFailed);
+            }
+        }
 
         // 2. Set the PER bit in the FLASH_CR register
         self.cr.write(|w| w.per().set_bit());
