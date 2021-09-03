@@ -8,14 +8,14 @@ use panic_semihosting as _;
 use stm32f3xx_hal::{pac, prelude::*};
 
 const CCM_RAM_START: u32 = 0x10000000;
-const PAGE_SZE: u32 = 0x7d0; // 2 KB
+const PAGE_SZE: u32 = 0x800; // 2 KiB (2048 byte)
 
 #[entry]
 /// Main Thread
 fn main() -> ! {
     // TODO make sure that this points to a page *start*?
 
-    let test_address = 268433000; //CCM_RAM_START - PAGE_SZE;
+    let test_address = CCM_RAM_START - PAGE_SZE;
 
     let dp = pac::Peripherals::take().unwrap();
 

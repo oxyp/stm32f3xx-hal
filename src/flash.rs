@@ -71,6 +71,7 @@ impl FlashExt for FLASH {
         // 1. Check that no main Flash memory operation is ongoing by checking the BSY bit in
         //    the FLASH_SR register.
         if self.sr.read().bsy().bit_is_set() {
+            // TODO alternatively wait until we can erase
             // We are busy! Come back later
             return Err(FlashError::Busy);
         }
@@ -86,13 +87,21 @@ impl FlashExt for FLASH {
         }
 
         // 2. Set the PER bit in the FLASH_CR register
-        self.cr.write(|w| w.per().set_bit());
+        self.cr.modify(|_r, w| w.per().set_bit());
 
         // 3. Program the FLASH_AR register to select a page to erase
+        // (this register is write-only, hence the use of `write()`)
         self.ar.write(|w| unsafe { w.bits(address) });
 
         // 4. Set the STRT bit in the FLASH_CR register (see below note)
-        self.cr.write(|w| w.strt().set_bit());
+        // TODO: this is where we get
+
+        // Error: Error communicating with probe: An error with the usage of the probe occured
+        // Caused by:
+        // 0: An error with the usage of the probe occured
+        // 1: An error specific to a probe type occured
+        // 2: Command failed with status SwdDpWait
+        self.cr.modify(|_r, w| w.strt().set_bit());
 
         // 5. Wait for the BSY bit to be reset
         while self.sr.read().bsy().bit_is_set() {
@@ -103,12 +112,15 @@ impl FlashExt for FLASH {
 
         defmt::info!("sr.WRPRTERR status: {}", self.sr.read().wrprterr().bit());
 
+        // stolen form libopencm flash impl: reset PER bit
+        //self.cr.modify(|_r, w| w.per().clear_bit());
+
         // 6. Check the EOP flag in the FLASH_SR register (it is set when the erase operation has succeeded),
         //    and then clear it by software.
         if self.sr.read().eop().bit_is_set() {
             // erase was successful
             // 7. Clear the EOP flag.
-            self.sr.write(|w| w.eop().clear_bit())
+            self.sr.modify(|_r, w| w.eop().clear_bit())
         } else {
             // this should be set by now!
             return Err(FlashError::EraseFailed);
