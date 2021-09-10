@@ -125,19 +125,25 @@ impl FlashExt for FLASH {
             // this should be set by now!
             return Err(FlashError::EraseFailed);
         }
-
+        for _ in 0..10 {
+            cortex_m::asm::nop();
+        }
         // The software should start checking if the BSY bit equals ‘0’ at least one CPU cycle after setting the STRT bit.
         defmt::info!(
             "BSY bit status after address write: {}",
             self.sr.read().bsy().bit()
         );
-
-        // WE ARE ASSUMING that the above takes > cycle so we're not waiting explicitly (danger danger)
-        if self.sr.read().bsy().bit_is_set() {
-            Ok(())
-        } else {
-            Err(FlashError::Busy)
+        while self.sr.read().bsy().bit_is_set() {
+            
         }
+
+        Ok(())
+        // // WE ARE ASSUMING that the above takes > cycle so we're not waiting explicitly (danger danger)
+        // if self.sr.read().bsy().bit_is_set() {
+        //     Ok(())
+        // } else {
+        //     Err(FlashError::Busy)
+        // }
     }
 
     // TODO finish implementation
