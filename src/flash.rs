@@ -25,6 +25,9 @@ EXTRA BONUS POINTS
 const FLASH_KEYR_KEY_1: u32 = 0x45670123;
 const FLASH_KEYR_KEY_2: u32 = 0xCDEF89AB;
 
+const CCM_RAM_START: u32 = 0x10000000;
+const PAGE_SZE: u32 = 0x800; // 2 KiB (2048 byte)
+
 // TODO impl std::Error for this?
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -57,7 +60,7 @@ pub trait FlashExt {
     /// ⚠️⚠️⚠️ CAUTION: ⚠️⚠️⚠️
     /// This function does *not* perform any bounds checks.
     /// If you overwrite program code, that is on you.
-    fn page_write(self, address: u32) -> Result<(), ()>;
+    fn page_write(self, address: u32, data: u32) -> Result<(), FlashError>;
 }
 
 impl FlashExt for FLASH {
@@ -147,7 +150,7 @@ impl FlashExt for FLASH {
     }
 
     // TODO finish implementation
-    fn page_write(self, _address: u32) -> Result<(), ()> {
+    fn page_write(self, address: u32, data: u32) -> Result<(), FlashError> {
         // TODO: do we have to unlock write protection (see "Unlocking the Flash memory")?
 
         // 1. Check that no main Flash memory operation is ongoing by checking the BSY bit in
@@ -155,7 +158,7 @@ impl FlashExt for FLASH {
         if self.sr.read().bsy().bit_is_set() {
             // We are busy! Come back later
             // TODO proper error tyoe
-            return Err(());
+            return Err(FlashError::Busy);
         }
 
         // TODO is the order correct here?
@@ -165,10 +168,52 @@ impl FlashExt for FLASH {
         self.cr.write(|w| w.pg().bit(true));
 
         // 3. Perform the data write (half-word) at the desired address.
+        self.ar.write(|w| unsafe { w.bits(address) });
+
+        // dummy code
+        unsafe {
+            // for hword in data {
+                core::ptr::write_volatile(address as *mut u32, data as u32);
+            // }
+        }
 
         // 4. Wait until the BSY bit is reset in the FLASH_SR register.
         // 5. Check the EOP flag in the FLASH_SR register (it is set when the programming operation
         //    has succeeded), and then clear it by software.
+
+        // Copied from page erase, might need fixing
+        // 5. Wait for the BSY bit to be reset
+        while self.sr.read().bsy().bit_is_set() {
+            // do nothing while the BSY bit is not reset yet
+            asm::nop();
+        }
+        defmt::info!("BSY bit status: {}", self.sr.read().bsy().bit());
+
+        defmt::info!("sr.WRPRTERR status: {}", self.sr.read().wrprterr().bit());
+
+        // stolen form libopencm flash impl: reset PER bit
+        //self.cr.modify(|_r, w| w.per().clear_bit());
+
+        // 6. Check the EOP flag in the FLASH_SR register (it is set when the erase operation has succeeded),
+        //    and then clear it by software.
+        if self.sr.read().eop().bit_is_set() {
+            // erase was successful
+            // 7. Clear the EOP flag.
+            self.sr.modify(|_r, w| w.eop().clear_bit())
+        } else {
+            // this should be set by now!
+            return Err(FlashError::EraseFailed);
+        }
+        for _ in 0..10 {
+            cortex_m::asm::nop();
+        }
+        // The software should start checking if the BSY bit equals ‘0’ at least one CPU cycle after setting the STRT bit.
+        defmt::info!(
+            "BSY bit status after address write: {}",
+            self.sr.read().bsy().bit()
+        );
+        while self.sr.read().bsy().bit_is_set() {
+        }
 
         Ok(())
     }
@@ -183,6 +228,11 @@ fn unlock_cr(flash: &FLASH) {
     flash.keyr.write(|w| w.fkeyr().bits(FLASH_KEYR_KEY_1));
     flash.keyr.write(|w| w.fkeyr().bits(FLASH_KEYR_KEY_2));
 }
+
+fn page_to_address() -> u32 {
+    // how to get to other pages? multiply page size?
+    CCM_RAM_START - PAGE_SZE
+    }
 
 /// Constrained FLASH peripheral
 pub struct Parts {

@@ -37,56 +37,61 @@ fn main() -> ! {
         //blue
         .into_push_pull_output(&mut gpioe.moder, &mut gpioe.otyper);
 
-    defmt::info!("erasing flash page at {:x}...", test_address);
-    let erase_result = dp.FLASH.page_erase(test_address);
-    defmt::info!("erase result: {}", erase_result);
+    // defmt::info!("erasing flash page at {:x}...", test_address);
+    // // let erase_result = dp.FLASH.page_erase(test_address);
+    // defmt::info!("erase result: {}", erase_result);
     
-    // let erase_result: Result<(), _> = Err(FlashError::Busy);
-    // let erase_result: Result<(), _> = Err(FlashError::EraseFailed);
-    // let erase_result: Result<(), _> = Err(FlashError::UnlockFailed);
-    // let erase_result: Result<(), ()> = Ok(());
+    // // let erase_result: Result<(), _> = Err(FlashError::Busy);
+    // // let erase_result: Result<(), _> = Err(FlashError::EraseFailed);
+    // // let erase_result: Result<(), _> = Err(FlashError::UnlockFailed);
+    // // let erase_result: Result<(), ()> = Ok(());
 
-    match erase_result {
-        Ok(_) => {
-            for i in 0..10 {
-                ok_led.set_low().unwrap();
-                cortex_m::asm::delay(16_000_000);
-                ok_led.set_high().unwrap();
-                cortex_m::asm::delay(8_000_000);
-            } 
-        },
-        //South
-        Err(FlashError::Busy) => {
-            for i in 0..3 {
-                err_busy_led.set_low().unwrap();
-                cortex_m::asm::delay(16_000_000);
-                err_busy_led.set_high().unwrap();
-                cortex_m::asm::delay(8_000_000);
-            }
-        },
-        // North East
-        Err(FlashError::EraseFailed) => {
-            for i in 0..3 {
-                err_erase_failed_led.set_low().unwrap();
-                cortex_m::asm::delay(16_000_000);
-                err_erase_failed_led.set_high().unwrap();
-                cortex_m::asm::delay(8_000_000);
-            }
-        },
-        // North West
-        Err(FlashError::UnlockFailed) => {
-            for i in 0..3 {
-                err_unlock_failed_led.set_low().unwrap();
-                cortex_m::asm::delay(16_000_000);
-                err_unlock_failed_led.set_high().unwrap();
-                cortex_m::asm::delay(8_000_000);
-            }
-        },
-    }
+    // match erase_result {
+    //     Ok(_) => {
+    //         for i in 0..10 {
+    //             ok_led.set_low().unwrap();
+    //             cortex_m::asm::delay(16_000_000);
+    //             ok_led.set_high().unwrap();
+    //             cortex_m::asm::delay(8_000_000);
+    //         } 
+    //     },
+    //     //South
+    //     Err(FlashError::Busy) => {
+    //         for i in 0..3 {
+    //             err_busy_led.set_low().unwrap();
+    //             cortex_m::asm::delay(16_000_000);
+    //             err_busy_led.set_high().unwrap();
+    //             cortex_m::asm::delay(8_000_000);
+    //         }
+    //     },
+    //     // North East
+    //     Err(FlashError::EraseFailed) => {
+    //         for i in 0..3 {
+    //             err_erase_failed_led.set_low().unwrap();
+    //             cortex_m::asm::delay(16_000_000);
+    //             err_erase_failed_led.set_high().unwrap();
+    //             cortex_m::asm::delay(8_000_000);
+    //         }
+    //     },
+    //     // North West
+    //     Err(FlashError::UnlockFailed) => {
+    //         for i in 0..3 {
+    //             err_unlock_failed_led.set_low().unwrap();
+    //             cortex_m::asm::delay(16_000_000);
+    //             err_unlock_failed_led.set_high().unwrap();
+    //             cortex_m::asm::delay(8_000_000);
+    //         }
+    //     },
+    // }
 
     // TODO try out write when erase works
     //let erase_result = dp.FLASH.page_write(test_address);
-    defmt::info!("done");
+    defmt::info!("erasing done");
+
+    defmt::info!("start writing");
+    let data: u32 = 0x01;
+    let write_result = dp.FLASH.page_write(test_address, data);
+
     // make sure function is diverging
     loop {
         asm::nop();
