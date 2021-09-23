@@ -1,9 +1,10 @@
+// use std::sync::mpsc::channel;
+
 use cortex_m::asm;
 
 use crate::{
     gpio::{self, Analog},
     pac::{
-        RCC,
         DAC1,
         dac1,
     },
@@ -21,8 +22,9 @@ use crate::pac::DMA1::{self};
 
 use crate::{
     pac::{
-        self, 
-        RCC::{Enable, Reset},
+        self,
+        rcc,
+        RCC,
     },
 };
 
@@ -114,28 +116,31 @@ pub enum Trigger {
 pub struct Dac {
     pub regs: DAC1,
     device: DacDevice,
-    bits: DacBits,
+    bits: DacBitAlignment,
     vref: f32,
 }
 
 // todo: Calculate the VDDA vref, as you do with onboard ADCs!
-impl<DAC> Dac <DAC>
-where
-    DAC: pac::DAC1,
+impl Dac 
+// where
+//     DAC: pac::DAC1,
 {
     /// Initialize a DAC peripheral, including  enabling and resetting
     /// its RCC peripheral clock. `vref` is in volts.
-    pub fn new(regs: DAC, device: DacDevice, bits: DacBitAlignment, vref: f32) -> Self {
-        free(|_| {
+    pub fn new(regs: DAC1, device: DacDevice, bits: DacBitAlignment, vref: f32) -> Self {
+        
             let rcc = unsafe { &(*RCC::ptr()) };
+            let apb1rstr = &rcc.apb1rstr;
             match device {
-                DacDevice::One => { 
-                    DAC1::enable(rcc);
-                    DAC1::reset(rcc);
+                DacDevice::One => {
+                    apb1rstr.reset();
+
+                    
+                
                  },
                 DacDevice::Two => todo!(),
             };           
-        });
+        
 
         Self {
             regs,
@@ -149,8 +154,8 @@ where
         let cr = &self.regs.cr;
 
         cr.modify(|_, w| match channel {
-            DacChannel::C1 => w.en1().set_bit(),
-            DacChannel::C2 => w.en2().set_bit(),
+            DacChannel::One => w.en1().set_bit(),
+            DacChannel::Two => w.en2().set_bit(),
         });
     }
 
@@ -176,6 +181,24 @@ where
                 });
             }
         }
+    }
+
+    pub fn enable_noise_gen(&mut self, channel: DacChannel) {
+        let cr = &self.regs.cr;
+
+        match channel {
+            DacChannel::One => {
+                cr.modify(|_, w| unsafe {
+                    w.wave1().noise()
+                });
+            }
+            DacChannel::Two => {
+                cr.modify(|_, w| unsafe {
+                    w.wave2().noise()
+                });
+            }
+        }
+
     }
 }
             
