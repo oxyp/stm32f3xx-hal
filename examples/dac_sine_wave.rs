@@ -1,16 +1,31 @@
 #![no_std]
 #![no_main]
 
-//! Example usage for ADC on STM32F303
+//! Example usage for DAC on STM32F303
 
 use panic_semihosting as _;
 
 use cortex_m::asm;
 use cortex_m_rt::entry;
-use cortex_m_semihosting::hprintln;
+// use cortex_m_semihosting::hprintln;
 
-use stm32f3xx_hal::{dac::{DacDevice, DacBitAlignment, Trigger, DacChannel}, delay::{self, Delay}, pac, prelude::*, timer::Timer};
-    
+use core::time::Duration;
+use stm32f3xx_hal::{
+    dac::{
+        Dac, DacDevice, DacBitAlignment, Trigger, DacChannel
+    }, 
+    delay::{self, Delay}, 
+    pac, 
+    prelude::*, 
+    time::duration::Milliseconds,
+    timer::{
+        Timer, 
+        
+    }, 
+};
+  
+
+
 
 #[entry]
 /// Main Thread
@@ -20,58 +35,44 @@ fn main() -> ! {
     let mut rcc = dp.RCC.constrain();
     let clocks = rcc.cfgr.freeze(&mut dp.FLASH.constrain().acr);
 
-
-
     // Set up pin PA4 as analog pin.
     // This pin is connected to the user button on the stm32f3discovery board.
     let mut gpioa = dp.GPIOA.split(&mut rcc.ahb);   
     let mut dac1_out1 = gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr);
 
+    let mut gpioe = dp.GPIOE.split(&mut rcc.ahb); 
+    let mut ok_led = gpioe
+        .pe15
+        .into_push_pull_output(&mut gpioe.moder, &mut gpioe.otyper);
+    
+
     // Output frequency of the DAC
-    let output_frequency = 2000;
-    let timer_frequency = output_frequency * x;
+    let output_frequency = 1 as u32;
+    let timer_frequency = Milliseconds::new(output_frequency);
+    
 
     // set up timer 6
-    let dac_timer = Timer::new(dp.TIM6, clocks, apb);
-    dac_timer.configure_interrupt(event, enable);
+    let mut dac_timer = Timer::new(dp.TIM6, clocks, &mut rcc.apb1);
+    
 
-    let mut delay = Delay::new(syst, clocks);
+    // let mut delay = Delay::new(syst, clocks);
 
     // set up dac1
-    let mut dac1 = Dac::new(dp.DAC1, DacDevice::One, DacBitAlignment::TwelveR, 3.3);
+    let mut dac1 = Dac::new(dp.DAC1, DacDevice::One, DacBitAlignment::TwelveRight, 3.3);
+    dac1.enable_channel(DacChannel::One);
     dac1.set_trigger(DacChannel::One, Trigger::Tim6);
 
-    //set up DMA
-    let mut dma = Dma
-
-
-
-   
-
-    
     
 
-    // Be aware that the values in the table below depend on the input of VREF.
-    // To have a stable VREF input, put a condensator and a volt limiting diode in front of it.
-    //
-    // Also know that integer division and the ADC hardware unit always round down.
-    // To make up for those errors, see this forum entry:
-    // [https://forum.allaboutcircuits.com/threads/why-adc-1024-is-correct-and-adc-1023-is-just-plain-wrong.80018/]
-    hprintln!("
-    The ADC has a 12 bit resolution, i.e. if your reference Value is 3V:
-        approx. ADC value | approx. volt value
-        ==================+===================
-                        0 |        0 mV
-                     2048 |     1500 mV
-                     4095 |     3000 mV
-
-    If you are using a STM32F3Discovery, PA0 is connected to the User Button.
-    Pressing it should connect the user Button to to HIGH and the value should change from 0 to 4095.
-    ").expect("Error using hprintln.");
+    //enable noise generation
+    dac1.enable_noise_gen(DacChannel::One);
+    
 
     loop {
-        let adc1_in1_data: u16 = adc1.read(&mut adc1_in1_pin).expect("Error reading adc1.");
-        hprintln!("PA0 reads {}", adc1_in1_data).ok();
-        asm::delay(2_000_000);
+        dac_timer.start(timer_frequency);
+        // ok_led.set_low().unwrap();
+        // cortex_m::asm::delay(16_000_000);
+        // ok_led.set_high().unwrap();
+        // cortex_m::asm::delay(8_000_000);
     }
 }
