@@ -70,9 +70,9 @@ fn main() -> ! {
 
     loop {
         dac_timer.start(timer_frequency);
-        // ok_led.set_low().unwrap();
-        // cortex_m::asm::delay(16_000_000);
-        // ok_led.set_high().unwrap();
-        // cortex_m::asm::delay(8_000_000);
+        ok_led.set_low().unwrap();
+        cortex_m::asm::delay(16_000_000);
+        ok_led.set_high().unwrap();
+        cortex_m::asm::delay(8_000_000);
     }
 }
