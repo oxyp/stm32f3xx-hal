@@ -73,45 +73,6 @@ pub enum Trigger {
     Swtrig = 0b111,
 }
 
-// #[cfg(any(feature = "gpio-f303", feature = "gpio-f303e"))]
-// adc_pins!(DAC1,
-//     gpio::PA4<Analog> => 1,
-//     gpio::PA5<Analog> => 2,
-//     gpio::PA6<Analog> => 3,
-// );
-
-// pub struct C1;
-// pub struct C2;
-
-// pub trait DacOut<V> {
-//     fn set_value(&mut self, val: V);
-//     fn get_value(&mut self) -> V;
-// }
-
-// pub trait DacPin {
-//     fn enable(&mut self);
-// }
-
-// pub trait Pins<DAC> {
-//     type Output;
-//     #[doc(hidden)]
-//     fn init() -> Self::Output;
-// }
-
-// impl Pins<DAC> for PA4<Analog> {
-//     type Output = C1;
-//     fn init() -> Self::Output {
-//         C1
-//     }
-// }
-
-// impl Pins<DAC> for PA5<Analog> {
-//     type Output = C2;
-//     fn init() -> Self::Output {
-//         C2
-//     }
-// }
-
 /// Represents a Digital to Analog Converter (DAC) peripheral.
 pub struct Dac {
     pub regs: DAC1,
@@ -202,4 +163,3 @@ impl Dac
     }
 }
             
-                
