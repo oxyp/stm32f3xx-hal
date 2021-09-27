@@ -183,5 +183,24 @@ impl Dac
         }
 
     }
+
+    pub fn write_data(&mut self, data: u32) {
+
+        match self.bits {
+            DacBitAlignment::EightRight =>  {
+                self.regs.dhr8r1.
+                    modify(|_,w| unsafe {
+                    w.bits(data)})
+                },
+            DacBitAlignment::TwelveLeft => {
+                self.regs.dhr12l1.
+                    modify(|_,w| unsafe {
+                    w.bits(data)})
+                },
+            DacBitAlignment::TwelveRight => { self.regs.dhr12r1.modify(|_,w| unsafe {
+                w.bits(data)})
+            }
+        }
+    }
 }
             
