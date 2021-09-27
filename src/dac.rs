@@ -92,12 +92,14 @@ impl Dac
         
             let rcc = unsafe { &(*RCC::ptr()) };
             let apb1rstr = &rcc.apb1rstr;
+            let apb1enr = &rcc.apb1enr;
+
             match device {
                 DacDevice::One => {
-                    apb1rstr.reset();
-
+                    apb1enr.modify(|_,  w| w.dac1en().set_bit());
+                    apb1rstr.modify(|_, w| w.dac1rst().set_bit());
+                    apb1rstr.modify(|_, w| w.dac1rst().clear_bit());
                     
-                
                  },
                 DacDevice::Two => todo!(),
             };           
