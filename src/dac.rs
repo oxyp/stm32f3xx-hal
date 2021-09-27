@@ -152,12 +152,32 @@ impl Dac
         match channel {
             DacChannel::One => {
                 cr.modify(|_, w| unsafe {
-                    w.wave1().noise()
+                    w.wave1().noise();
+                    w.mamp1().bits(0b000)
                 });
             }
             DacChannel::Two => {
                 cr.modify(|_, w| unsafe {
                     w.wave2().noise()
+                });
+            }
+        }
+
+    }
+
+    pub fn enable_triangle_gen(&mut self, channel: DacChannel) {
+        let cr = &self.regs.cr;
+
+        match channel {
+            DacChannel::One => {
+                cr.modify(|_, w| unsafe {
+                    w.wave1().triangle();
+                    w.mamp1().bits(0b0011)
+                });
+            }
+            DacChannel::Two => {
+                cr.modify(|_, w| unsafe {
+                    w.wave2().triangle()
                 });
             }
         }
