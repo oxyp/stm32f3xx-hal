@@ -268,6 +268,11 @@ pub struct PushPull;
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct OpenDrain;
 
+/// Disconnected pin in input mode (type state, reset value).
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct Disconnected;
+
 impl marker::Readable for Input {}
 impl marker::Readable for Output<OpenDrain> {}
 impl<Otype> marker::OutputSpeed for Output<Otype> {}
@@ -459,6 +464,8 @@ where
         pupdr.floating(self.index.index());
         self.into_mode()
     }
+
+   /// into_disconnected
 }
 
 impl<Gpio, Index, Mode> Pin<Gpio, Index, Mode>
