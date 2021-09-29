@@ -1,4 +1,4 @@
-// use std::sync::mpsc::channel;
+//Based on stm32hal by David-OConnor
 
 use cortex_m::asm;
 
@@ -28,12 +28,6 @@ use crate::{
     },
 };
 
-
-
-
-pub enum DacMode {
-
-}
 
 pub enum DacDevice {
     One,
@@ -73,6 +67,35 @@ pub enum Trigger {
     Swtrig = 0b111,
 }
 
+/// Mask selector for noise generation or Amplitude selector for triangle generation
+pub enum Mamp {
+     
+    /// Unmask bit0 of LFSR/ triangle amplitude equal to 1
+    Mamp0 = 0b0000,
+    /// Unmask bits[1:0] of LFSR/ triangle amplitude equal to 3
+    Mamp1 = 0b0001,
+    /// Unmask bits[2:0] of LFSR/ triangle amplitude equal to 7
+    Mamp2 = 0b0010,
+    /// Unmask bits[3:0] of LFSR/ triangle amplitude equal to 15
+    Mamp3 = 0b0011,
+    /// Unmask bits[4:0] of LFSR/ triangle amplitude equal to 31
+    Mamp4 = 0b0100,
+    /// Unmask bits[5:0] of LFSR/ triangle amplitude equal to 63 
+    Mamp5 = 0b0101, 
+    /// Unmask bits[6:0] of LFSR/ triangle amplitude equal to 127 
+    Mamp6 = 0b0110,
+    /// Unmask bits[7:0] of LFSR/ triangle amplitude equal to 255
+    Mamp7 = 0b0111,
+    /// Unmask bits[8:0] of LFSR/ triangle amplitude equal to 511 
+    Mamp8 = 0b1000,
+    /// Unmask bits[9:0] of LFSR/ triangle amplitude equal to 1023 
+    Mamp9 = 0b1001,
+    /// Unmask bits[10:0] of LFSR/ triangle amplitude equal to 2047
+    Mamp10 = 0b1010, 
+    // Unmask bits[11:0] of LFSR/ triangle amplitude equal to 4095
+    Mamp11 = 0b1011, 
+}
+
 /// Represents a Digital to Analog Converter (DAC) peripheral.
 pub struct Dac {
     pub regs: DAC1,
@@ -83,25 +106,24 @@ pub struct Dac {
 
 // todo: Calculate the VDDA vref, as you do with onboard ADCs!
 impl Dac 
-// where
-//     DAC: pac::DAC1,
 {
     /// Initialize a DAC peripheral, including  enabling and resetting
     /// its RCC peripheral clock. `vref` is in volts.
     pub fn new(regs: DAC1, device: DacDevice, bits: DacBitAlignment, vref: f32) -> Self {
         
             let rcc = unsafe { &(*RCC::ptr()) };
-            let apb1rstr = &rcc.apb1rstr;
-            let apb1enr = &rcc.apb1enr;
-
             match device {
                 DacDevice::One => {
-                    apb1enr.modify(|_,  w| w.dac1en().set_bit());
-                    apb1rstr.modify(|_, w| w.dac1rst().set_bit());
-                    apb1rstr.modify(|_, w| w.dac1rst().clear_bit());
+                    rcc.apb1enr.modify(|_,  w| w.dac1en().set_bit());
+                    rcc.apb1rstr.modify(|_, w| w.dac1rst().set_bit());
+                    rcc.apb1rstr.modify(|_, w| w.dac1rst().clear_bit());
                     
                  },
-                DacDevice::Two => todo!(),
+                DacDevice::Two => {
+                    rcc.apb2enr.modify(|_,  w| w.dac2en().set_bit());
+                    rcc.apb2rstr.modify(|_, w| w.dac2rst().set_bit());
+                    rcc.apb2rstr.modify(|_, w| w.dac2rst().clear_bit());
+                },
             };           
         
 
@@ -146,38 +168,40 @@ impl Dac
         }
     }
 
-    pub fn enable_noise_gen(&mut self, channel: DacChannel) {
+    pub fn enable_noise_gen(&mut self, channel: DacChannel, mamp: Mamp) {
         let cr = &self.regs.cr;
 
         match channel {
             DacChannel::One => {
                 cr.modify(|_, w| unsafe {
                     w.wave1().noise();
-                    w.mamp1().bits(0b000)
+                    w.mamp1().bits(mamp)
                 });
             }
             DacChannel::Two => {
                 cr.modify(|_, w| unsafe {
-                    w.wave2().noise()
+                    w.wave2().noise();
+                    w.mamp2().bits(mamp)
                 });
             }
         }
 
     }
 
-    pub fn enable_triangle_gen(&mut self, channel: DacChannel) {
+    pub fn enable_triangle_gen(&mut self, channel: DacChannel, mamp: Mamp) {
         let cr = &self.regs.cr;
 
         match channel {
             DacChannel::One => {
                 cr.modify(|_, w| unsafe {
                     w.wave1().triangle();
-                    w.mamp1().bits(0b0011)
+                    w.mamp1().bits(mamp)
                 });
             }
             DacChannel::Two => {
                 cr.modify(|_, w| unsafe {
-                    w.wave2().triangle()
+                    w.wave2().triangle();
+                    w.mamp2().bits(mamp)
                 });
             }
         }
@@ -188,17 +212,19 @@ impl Dac
 
         match self.bits {
             DacBitAlignment::EightRight =>  {
-                self.regs.dhr8r1.
-                    modify(|_,w| unsafe {
-                    w.bits(data)})
-                },
+                self.regs.dhr8r1
+                    .modify(|_,w| unsafe {
+                        w.bits(data)})
+            },
             DacBitAlignment::TwelveLeft => {
-                self.regs.dhr12l1.
-                    modify(|_,w| unsafe {
-                    w.bits(data)})
-                },
-            DacBitAlignment::TwelveRight => { self.regs.dhr12r1.modify(|_,w| unsafe {
-                w.bits(data)})
+                self.regs.dhr12l1
+                    .modify(|_,w| unsafe {
+                        w.bits(data)})
+            },
+            DacBitAlignment::TwelveRight => { 
+                self.regs.dhr12r1
+                    .modify(|_,w| unsafe {
+                        w.bits(data)})
             }
         }
     }
