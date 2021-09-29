@@ -2,12 +2,12 @@
 #![no_main]
 
 //! Example usage for DAC on STM32F303
+// Based on example in stm32hal by David-OConnor
 
 use panic_semihosting as _;
 
 use cortex_m::asm;
 use cortex_m_rt::entry;
-// use cortex_m_semihosting::hprintln;
 
 use core::time::Duration;
 use stm32f3xx_hal::{
@@ -57,25 +57,26 @@ fn main() -> ! {
     let clocks = rcc.cfgr.freeze(&mut dp.FLASH.constrain().acr);
 
     // Set up pin PA4 as analog pin.
-    // This pin is connected to the user button on the stm32f3discovery board.
     let mut gpioa = dp.GPIOA.split(&mut rcc.ahb);   
     let mut dac1_out1 = gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr);
 
+    // set up led for blinking loop
     let mut gpioe = dp.GPIOE.split(&mut rcc.ahb); 
     let mut ok_led = gpioe
         .pe15
         .into_push_pull_output(&mut gpioe.moder, &mut gpioe.otyper);
 
 
-    // set up dac1
+    // set up dac1, data is twelve bits, alighned right, reference voltage is 3.3
     let mut dac1 = Dac::new(dp.DAC1, DacDevice::One, DacBitAlignment::TwelveRight, 3.3);
+    // enable channel one for single channel mode
     dac1.enable_channel(DacChannel::One);
 
     
    let mut led = true;
 
     loop {
-
+        // lookup values for sine wave and write in buffer
         for value in SIN_X {
             dac1.write_data(value);
             cortex_m::asm::delay(8_000);
