@@ -465,7 +465,7 @@ where
         self.into_mode()
     }
 
-   /// into_disconnected
+   // into_disconnected
 }
 
 impl<Gpio, Index, Mode> Pin<Gpio, Index, Mode>
