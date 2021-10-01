@@ -175,13 +175,13 @@ impl Dac
             DacChannel::One => {
                 cr.modify(|_, w| unsafe {
                     w.wave1().noise();
-                    w.mamp1().bits(mamp)
+                    w.mamp1().bits(mamp as u8)
                 });
             }
             DacChannel::Two => {
                 cr.modify(|_, w| unsafe {
                     w.wave2().noise();
-                    w.mamp2().bits(mamp)
+                    w.mamp2().bits(mamp as u8)
                 });
             }
         }
@@ -195,13 +195,13 @@ impl Dac
             DacChannel::One => {
                 cr.modify(|_, w| unsafe {
                     w.wave1().triangle();
-                    w.mamp1().bits(mamp)
+                    w.mamp1().bits(mamp as u8)
                 });
             }
             DacChannel::Two => {
                 cr.modify(|_, w| unsafe {
                     w.wave2().triangle();
-                    w.mamp2().bits(mamp)
+                    w.mamp2().bits(mamp as u8)
                 });
             }
         }
