@@ -120,9 +120,9 @@ impl Dac
                     
                  },
                 DacDevice::Two => {
-                    rcc.apb2enr.modify(|_,  w| w.dac2en().set_bit());
-                    rcc.apb2rstr.modify(|_, w| w.dac2rst().set_bit());
-                    rcc.apb2rstr.modify(|_, w| w.dac2rst().clear_bit());
+                    rcc.apb1enr.modify(|_,  w| w.dac2en().set_bit());
+                    rcc.apb1rstr.modify(|_, w| w.dac2rst().set_bit());
+                    rcc.apb1rstr.modify(|_, w| w.dac2rst().clear_bit());
                 },
             };           
         
