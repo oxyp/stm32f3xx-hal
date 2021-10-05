@@ -560,6 +560,15 @@ where
             pins: (tx_pin, rx_pin),
         }
     }
+
+        
+    pub fn enable_flow_control(&mut self) {
+        self.usart.cr3.modify(|_, w| w.ctse().set_bit());
+        self.usart.cr3.modify(|_, w| w.rtse().set_bit());
+
+    }
+
+    
 }
 
 impl<Usart, Pins> Serial<Usart, Pins>
