@@ -33,7 +33,7 @@ fn main() -> ! {
 
     let mut gpioa = dp.GPIOA.split(&mut rcc.ahb);
 
-    let rts = gpioa.pa12.into_af1_open_drain(&mut gpioa.moder, &mut gpioa.otyper, &mut gpioa.afrh);
+    let rts = gpioa.pa12.into_af7_push_pull(&mut gpioa.moder, &mut gpioa.otyper, &mut gpioa.afrh);
 
     let pins = (
         gpioa
@@ -72,8 +72,6 @@ fn main() -> ! {
     let (tx_buf, tx_channel, tx) = sending.wait();
     let (rx_buf, rx_channel, rx) = receiving.wait();
 
-    assert_eq!(tx_buf, rx_buf);
-
     // After a transfer is finished its parts can be re-used for another one.
     tx_buf.copy_from_slice(b"hi again!");
 
@@ -83,7 +81,6 @@ fn main() -> ! {
     let (tx_buf, ..) = sending.wait();
     let (rx_buf, ..) = receiving.wait();
 
-    assert_eq!(tx_buf, rx_buf);
 
 
     loop {
