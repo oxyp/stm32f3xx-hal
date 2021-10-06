@@ -562,8 +562,8 @@ where
     }
 
         
-    pub fn enable_flow_control(&mut self) {
-        self.usart.cr3.modify(|_, w| w.ctse().set_bit());
+    pub fn enable_flow_control_rts(&mut self) {
+        // self.usart.cr3.modify(|_, w| w.ctse().set_bit());
         self.usart.cr3.modify(|_, w| w.rtse().set_bit());
 
     }
