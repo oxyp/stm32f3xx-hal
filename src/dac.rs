@@ -29,11 +29,6 @@ use crate::{
 };
 
 
-pub enum DacDevice {
-    One,
-    Two,
-}
-
 pub enum DacChannel {
     One,
     Two,
@@ -98,40 +93,26 @@ pub enum Mamp {
 
 /// Represents a Digital to Analog Converter (DAC) peripheral.
 pub struct Dac {
-    pub regs: DAC1,
-    device: DacDevice,
+    regs: DAC1,
     bits: DacBitAlignment,
-    vref: f32,
 }
 
 // todo: Calculate the VDDA vref, as you do with onboard ADCs!
 impl Dac 
 {
     /// Initialize a DAC peripheral, including  enabling and resetting
-    /// its RCC peripheral clock. `vref` is in volts.
-    pub fn new(regs: DAC1, device: DacDevice, bits: DacBitAlignment, vref: f32) -> Self {
+
+    pub fn new(regs: DAC1, bits: DacBitAlignment) -> Self {
         
-            let rcc = unsafe { &(*RCC::ptr()) };
-            match device {
-                DacDevice::One => {
-                    rcc.apb1enr.modify(|_,  w| w.dac1en().set_bit());
-                    rcc.apb1rstr.modify(|_, w| w.dac1rst().set_bit());
-                    rcc.apb1rstr.modify(|_, w| w.dac1rst().clear_bit());
-                    
-                 },
-                DacDevice::Two => {
-                    rcc.apb1enr.modify(|_,  w| w.dac2en().set_bit());
-                    rcc.apb1rstr.modify(|_, w| w.dac2rst().set_bit());
-                    rcc.apb1rstr.modify(|_, w| w.dac2rst().clear_bit());
-                },
-            };           
-        
+        let rcc = unsafe { &(*RCC::ptr()) };
+
+        rcc.apb1enr.modify(|_,  w| w.dac1en().set_bit());
+        rcc.apb1rstr.modify(|_, w| w.dac1rst().set_bit());
+        rcc.apb1rstr.modify(|_, w| w.dac1rst().clear_bit());
 
         Self {
             regs,
-            device,
             bits,
-            vref,
         }
     }
 
@@ -144,11 +125,6 @@ impl Dac
         });
     }
 
-    /// Select and activate a trigger. See f303 Reference manual, section 16.5.4.
-    /// Each time a DAC interface detects a rising edge on the selected trigger source (refer to the
-    /// table below), the last data stored into the DAC_DHRx register are transferred into the
-    /// DAC_DORx register. The DAC_DORx register is updated three dac_pclk cycles after the
-    /// trigger occurs.
     pub fn set_trigger(&mut self, channel: DacChannel, trigger: Trigger) {
         let cr = &self.regs.cr;
 

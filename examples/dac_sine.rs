@@ -12,7 +12,7 @@ use cortex_m_rt::entry;
 use core::time::Duration;
 use stm32f3xx_hal::{
     dac::{
-        Dac, DacDevice, DacBitAlignment, Trigger, DacChannel
+        Dac, DacBitAlignment, Trigger, DacChannel
     }, 
     delay::{self, Delay}, 
     pac, 
@@ -67,8 +67,8 @@ fn main() -> ! {
         .into_push_pull_output(&mut gpioe.moder, &mut gpioe.otyper);
 
 
-    // set up dac1, data is twelve bits, alighned right, reference voltage is 3.3
-    let mut dac1 = Dac::new(dp.DAC1, DacDevice::One, DacBitAlignment::TwelveRight, 3.3);
+    // set up dac1, data is twelve bits, alighned right
+    let mut dac1 = Dac::new(dp.DAC1, DacBitAlignment::TwelveRight);
     // enable channel one for single channel mode
     dac1.enable_channel(DacChannel::One);
 
