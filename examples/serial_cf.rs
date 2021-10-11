@@ -43,43 +43,41 @@ fn main() -> ! {
             .pa10
             .into_af7_push_pull(&mut gpioa.moder, &mut gpioa.otyper, &mut gpioa.afrh),
     );
-    let mut serial = Serial::new(dp.USART1, pins, 9600.Bd(), clocks, &mut rcc.apb2);
+    let mut serial = Serial::new_with_flow_control(dp.USART1, pins, 9600.Bd(), clocks, &mut rcc.apb2);
 
-    serial.enable_flow_control_rts();
+
 
 
     
-    let (tx, rx) = serial.split();
+    let (mut tx, mut rx) = serial.split();
 
-    let dma1 = dp.DMA1.split(&mut rcc.ahb);
 
     // the data we are going to send over serial
-    let tx_buf = singleton!(: [u8; 9] = *b"hello DMA").unwrap();
-    // the buffer we are going to receive the transmitted data in
-    let rx_buf = singleton!(: [u8; 9] = [0; 9]).unwrap();
-
-    // DMA channel selection depends on the peripheral:
-    // - USART1: TX = 4, RX = 5
-    // - USART2: TX = 6, RX = 7
-    // - USART3: TX = 3, RX = 2
-    let (tx_channel, rx_channel) = (dma1.ch4, dma1.ch5);
-
+    // let tx_buf = singleton!(: [u8; 9] = *b"hello DMA").unwrap();
+    // // the buffer we are going to receive the transmitted data in
+    // let rx_buf = singleton!(: [u8; 9] = [0; 9]).unwrap();
+    let msg: u8 = 100;
+    loop {
+       
     // start separate DMAs for sending and receiving the data
-    let sending = tx.write_all(tx_buf, tx_channel);
-    let receiving = rx.read_exact(rx_buf, rx_channel);
+    let sending = tx.write(msg).unwrap();
+    sending.wait();
+    let receiving = rx.read().unwrap();
+
+    }
 
     // block until all data was transmitted and received
-    let (tx_buf, tx_channel, tx) = sending.wait();
-    let (rx_buf, rx_channel, rx) = receiving.wait();
+    // let (tx_buf, tx, tx) = sending.wait();
+    // let (rx_buf, rx, rx) = receiving.wait();
 
     // After a transfer is finished its parts can be re-used for another one.
-    tx_buf.copy_from_slice(b"hi again!");
+    // tx_buf.copy_from_slice(b"hi again!");
 
-    let sending = tx.write_all(tx_buf, tx_channel);
-    let receiving = rx.read_exact(rx_buf, rx_channel);
+    // let sending = tx.write(tx_buf);
+    // let receiving = rx.read_exact(rx_buf);
 
-    let (tx_buf, ..) = sending.wait();
-    let (rx_buf, ..) = receiving.wait();
+    // let (tx_buf, ..) = sending.wait();
+    // let (rx_buf, ..) = receiving.wait();
 
 
 
