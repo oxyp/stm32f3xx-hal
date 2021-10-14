@@ -11,19 +11,14 @@ use cortex_m_rt::entry;
 
 use core::time::Duration;
 use stm32f3xx_hal::{
-    dac::{
-        Dac, DacBitAlignment, Trigger, DacChannel
-    }, 
-    delay::{self, Delay}, 
-    pac, 
-    prelude::*, 
+    dac::{Dac, DacChannel},
+    delay::{self, Delay},
+    pac,
+    prelude::*,
     time::duration::Milliseconds,
-    timer::{
-        Timer, 
-        
-    }, 
+    timer::Timer,
 };
-  
+
 const LUT_LEN: usize = 256;
 
 // A lookup table for sin(x), over one period, using values from 0 - 4095; ie the full range of
@@ -46,8 +41,6 @@ pub static SIN_X: [u32; crate::LUT_LEN] = [
     1358, 1405, 1453, 1501, 1550, 1599, 1648, 1697, 1747, 1797, 1847, 1897, 1947, 1997,
 ];
 
-
-
 #[entry]
 /// Main Thread
 fn main() -> ! {
@@ -57,23 +50,21 @@ fn main() -> ! {
     let clocks = rcc.cfgr.freeze(&mut dp.FLASH.constrain().acr);
 
     // Set up pin PA4 as analog pin.
-    let mut gpioa = dp.GPIOA.split(&mut rcc.ahb);   
+    let mut gpioa = dp.GPIOA.split(&mut rcc.ahb);
     let mut dac1_out1 = gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr);
 
     // set up led for blinking loop
-    let mut gpioe = dp.GPIOE.split(&mut rcc.ahb); 
+    let mut gpioe = dp.GPIOE.split(&mut rcc.ahb);
     let mut ok_led = gpioe
         .pe15
         .into_push_pull_output(&mut gpioe.moder, &mut gpioe.otyper);
 
-
     // set up dac1, data is twelve bits, alighned right
-    let mut dac1 = Dac::new(dp.DAC1, DacBitAlignment::TwelveRight);
+    let mut dac1 = Dac::new(dp.DAC1, &mut rcc.apb1);
     // enable channel one for single channel mode
     dac1.enable_channel(DacChannel::One);
 
-    
-   let mut led = true;
+    let mut led = true;
 
     loop {
         // lookup values for sine wave and write in buffer
