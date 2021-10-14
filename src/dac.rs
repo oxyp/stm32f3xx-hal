@@ -50,7 +50,9 @@ impl Dac {
         });
     }
 
-    pub fn write_data(&mut self, data: u32) {
-        self.regs.dhr8r1.modify(|_, w| unsafe { w.bits(data) })
+    /// the data parameter MUST be a 12-bit value -- values outside that range will result in misbehavior
+    pub fn write_data(&mut self, data: u16) {
+        
+        self.regs.dhr12r1.write(|w| w.dacc1dhr().bits(data))
     }
 }

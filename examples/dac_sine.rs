@@ -6,24 +6,19 @@
 
 use panic_semihosting as _;
 
-use cortex_m::asm;
 use cortex_m_rt::entry;
 
-use core::time::Duration;
 use stm32f3xx_hal::{
     dac::{Dac, DacChannel},
-    delay::{self, Delay},
     pac,
     prelude::*,
-    time::duration::Milliseconds,
-    timer::Timer,
 };
 
 const LUT_LEN: usize = 256;
 
 // A lookup table for sin(x), over one period, using values from 0 - 4095; ie the full range of
 // the STM32 12-bit onboard DAC. Compared to computation, this is faster, at the expense of memory use.
-pub static SIN_X: [u32; crate::LUT_LEN] = [
+pub static SIN_X: [u16; crate::LUT_LEN] = [
     2048, 2098, 2148, 2198, 2248, 2298, 2348, 2398, 2447, 2496, 2545, 2594, 2642, 2690, 2737, 2784,
     2831, 2877, 2923, 2968, 3013, 3057, 3100, 3143, 3185, 3226, 3267, 3307, 3346, 3385, 3423, 3459,
     3495, 3530, 3565, 3598, 3630, 3662, 3692, 3722, 3750, 3777, 3804, 3829, 3853, 3876, 3898, 3919,
@@ -45,13 +40,13 @@ pub static SIN_X: [u32; crate::LUT_LEN] = [
 /// Main Thread
 fn main() -> ! {
     // Get peripherals, clocks and freeze them
-    let mut dp = pac::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
     let mut rcc = dp.RCC.constrain();
-    let clocks = rcc.cfgr.freeze(&mut dp.FLASH.constrain().acr);
+    // let clocks = rcc.cfgr.freeze(&mut dp.FLASH.constrain().acr);
 
     // Set up pin PA4 as analog pin.
     let mut gpioa = dp.GPIOA.split(&mut rcc.ahb);
-    let mut dac1_out1 = gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr);
+    let _dac1_out1 = gpioa.pa4.into_analog(&mut gpioa.moder, &mut gpioa.pupdr);
 
     // set up led for blinking loop
     let mut gpioe = dp.GPIOE.split(&mut rcc.ahb);
