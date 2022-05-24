@@ -171,6 +171,7 @@ pub mod adc;
 #[cfg(feature = "can")]
 #[cfg_attr(docsrs, doc(cfg(feature = "can")))]
 pub mod can;
+pub mod dac;
 pub mod delay;
 pub mod dma;
 pub mod flash;
